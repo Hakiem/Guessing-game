@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" href="css/styles.css" type="text/css" />
+        <script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
+        <script type="text/javascript" src="js/jquery.tabSlideOut.v1.3.js"></script>
+        <script type="text/javascript" src="js/Materials.js" charset="UTF-8"></script>
+        <script type="text/javascript" src="js/jquery.flip.min.js"></script>
+
+        <title>ENARMAD BANDIT</title>
+        <script type="text/javascript" language="javascript">
+			
+			/*
+			$(function(){
+				$('.slide-out-div').tabSlideOut({
+					tabHandle: '.handle',                     //class of the element that will become your tab
+					pathToTabImage: 'bilder/contact_tab.gif', //path to the image for the tab //Optionally can be set using css
+					imageHeight: '122px',                     //height of tab image           //Optionally can be set using css
+					imageWidth: '40px',                       //width of tab image            //Optionally can be set using css
+					tabLocation: 'left',                      //side of screen where tab lives, top, right, bottom, or left
+					speed: 300,                               //speed of animation
+					action: 'click',                          //options: 'click' or 'hover', action to trigger animation
+					topPos: '200px',                          //position from the top/ use if tabLocation is left or right
+					leftPos: '20px',                          //position from left/ use if tabLocation is bottom or top
+					fixedPosition: false                      //options: true makes it stick(fixed position) on scroll
+				});
+		
+			});
+			*/
+            var materials = new PlayMaterialsClass();   // Create a new object of the PlayerMaterialClass class...
+			
+            /* When the Spela (Play) button is clicked  */
+            function spela_click() {
+
+                var currentdate = new Date();
+
+                //  1. string array to hold randomized string names of images src
+                var randomizedImagesSrcArrayHolder = [];
+
+                // 2. string array to hold randomized string names of images
+                var randomizedImageNamesHolder = [];
+
+                // 3. Randomize an array of 3 choices
+                for (var i = 0; i < 3; i++) {
+                    var randomizedNumber = materials.Randomizer();
+                    randomizedImageNamesHolder.push(materials.playMaterials[randomizedNumber][0]);
+                    randomizedImagesSrcArrayHolder.push(materials.playMaterials[randomizedNumber][1]);
+                }
+                
+                var j = 1;
+                var logString;
+                logString = currentdate.getHours() + ":" + currentdate.getMinutes() + ":" +  ('0' + currentdate.getSeconds()).slice(-2) + " : ";
+
+                // 4. Fill ChoiceImageSrcHolder Hidden button with randomized strings using ForEach loop. Its nice on collections
+                randomizedImagesSrcArrayHolder.forEach(function (imageString) {
+
+                    $("#" + j + "ChoiceImageSrcHolder").val('');
+                    $("#" + j + "ChoiceImageSrcHolder").val(imageString);
+
+                    logString += randomizedImageNamesHolder[j - 1] + " + ";
+
+                    j++;
+                });
+
+                // 5. Find out if any images appear once, twice or thrice
+                var occuranceValue = materials.CheckOccuranceOfStringsInArray(randomizedImageNamesHolder);
+
+                // 6. Get the amount to reward based on the number of appearances
+                var amountToBeRewarded = materials.RewardByValue(occuranceValue, randomizedImageNamesHolder);
+
+                // 7. Record current amount in Hidden Field to be referenced on the next round of the game
+                materials.KeepNewValueInHiddenElement(amountToBeRewarded);
+
+                // 8. Draw the images from hidden fields to image actual windows
+                // Pass Image Names too to be written underneath
+                materials.PersistImages(randomizedImageNamesHolder);
+
+                // 9. Show the images in a sequence, with variable defined in PlayerMaterialClass();
+                $(".imagesShow").each(function (index) {
+                    $(this).delay(materials.DelayBetweenImagesShowSequence * index).fadeIn(1000);
+                    $("#div" + (index + 1) + "ChoiceName").delay(materials.DelayBetweenImagesShowSequence * index).fadeIn(1000);
+                    /*
+                    $("#div" + (index + 1) + "ChoiceName").flip({
+                        direction: 'tb',
+                        onBefore: function () {
+                            console.log('before starting the animation' + "#div" + (index + 1) + "ChoiceName");
+                        },
+                        onAnimation: function () {
+                            console.log('in the middle of the animation' + "#div" + (index + 1) + "ChoiceName");
+                        },
+                        onEnd: function () {
+                            console.log('when the animation has already ended' + "#div" + (index + 1) + "ChoiceName");
+                        }
+                    });*/
+                });
+
+                // NB. Since we have 3 images and we have a total of 1.5 (1500) seconds to display them all, 
+                // then we can wait for them to be displayed. i.e Pause the system for 1.5. 
+                // But we can do 1.7 seconds to make it look cuter
+                // then write to the Play log. 
+                setTimeout(function () {
+
+                    // this code will run later;
+
+                    // 10. Update the currentPoints Label to reflect the amount of Kronors earned
+                    $("#currentPoints").text('');
+                    $("#currentPoints").text(parseInt($('#currentScoreHolder').val(), 10));  // to one decimal place
+
+                    // 11. Update number of times played and Plural of the word Gång to Gånger
+                    var prevTimesPlayed = parseInt($("#numberTimesPlayed").val());
+                    prevTimesPlayed = prevTimesPlayed + 1;
+                    $("#lblTimesPlayed").text('');
+                    $("#lblTimesNoun").text('');
+                    $("#lblTimesPlayed").text(' [ ' + prevTimesPlayed + ' ] ');
+                    $("#numberTimesPlayed").val(prevTimesPlayed);
+                    $("#lblTimesNoun").text(((prevTimesPlayed <= 1) ? " GÅNG" : " GÅNGER"));
+
+                    // 11. Write to player log div : Most recent writings added on top -> (Time - log - amount)
+                    $("#rewardsActivityLog").prepend(
+                        $('<p> -> <b>' + logString.toUpperCase().substr(0, logString.length - 3) +
+                            '</b> = <b style=color:Blue>' + amountToBeRewarded + 'kr</b></p>').fadeIn('slow'));
+                }, materials.DelayToWriteToPlayersPlayingLog);
+				
+				$('#starta').prop('disabled', false);
+            }
+
+            /* when the reset button is clicked, cause a reload and this will reset all values to their default 0 */
+            function starta_om_Click() {
+                var strconfirm = confirm("Vill du verkligen starta om spelet helt nytt? ");
+                document.location.reload(((strconfirm == true) ? true : false));
+            }
+
+        </script>
+    </head>
+
+    <body>
+        <div style="text-align: center; width:810px; margin:0 auto;">
+            <div id="HeaderContainer">
+                <!--<h1>ENARMAD BANDIT</h1>-->
+            </div>
+            <div id="MainContainer">
+                <table class="TableClass">
+                    <tr>
+                        <td><div id="div1Choice" class="imageStyles"><img id="1Choice" class="imagesShow" /><div id="div1ChoiceName" class="imgName"></div></div></td>
+                        <td><div id="div2Choice" class="imageStyles"><img id="2Choice" class="imagesShow" /><div id="div2ChoiceName" class="imgName"></div></div></td>
+                        <td><div id="div3Choice" class="imageStyles"><img id="3Choice" class="imagesShow" /><div id="div3ChoiceName" class="imgName"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <table class="TableCellCenterAlign">
+                                <tr>
+                                    <td class="playButtons"><input id="spela" type="button" value="Spela!" onclick="spela_click();" /></td>
+                                    <td class="playButtons"><input id="starta" type="button" value="Starta helt om!" onclick="return starta_om_Click();"/></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+                <div id="rewardsLog" style="width: 100%;text-align: center;margin:0 auto; ">
+                    <h3>SAMMANLAGD BELÖNINGAR : <label id="currentPoints" class="redder">0</label> (Kr) FÖRTJÄNAT INOM 
+                        <label id="lblTimesPlayed" class="redder">0</label> <label id="lblTimesNoun">GÅNG</label></h3>
+                    <div style="width:100%;height:200px;overflow-y:auto;" id="rewardsActivityLog"></div>
+                </div>
+                <input type="hidden" id="1ChoiceImageSrcHolder"/>
+                <input type="hidden" id="2ChoiceImageSrcHolder"/>
+                <input type="hidden" id="3ChoiceImageSrcHolder"/>
+                <input type="hidden" id="currentScoreHolder" value="0" />
+                <input type="hidden" id="numberTimesPlayed" value="0" />
+            </div>
+        </div>
+        <!--
+        <div class="slide-out-div" title="This is where the Hall of fame is going to be">
+            <a class="handle" href="http://link-for-non-js-users">Content</a>
+            <h3>Contact me</h3>
+            <a href="mailto:wpaoli@gmail.com">wpaoli@gmail.com</a><br /><br />
+            <p>Thanks for checking out my jQuery plugin, I hope you find this useful.</p>
+            <p>This can be a form to submit feedback, or contact info</p>
+        </div>
+        -->
+    </body>
+</html>
